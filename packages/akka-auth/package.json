@@ -1,0 +1,21 @@
+{
+  "name": "@akka/auth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Google sign-in restricted to @akka.app, through Supabase Auth, for Akka's internal Next.js apps.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./middleware": "./src/middleware.ts",
+    "./routes": "./src/routes.ts",
+    "./login-screen": "./src/login-screen.tsx",
+    "./auth.css": "./src/auth.css"
+  },
+  "peerDependencies": {
+    "@supabase/ssr": ">=0.12",
+    "@supabase/supabase-js": ">=2.100",
+    "next": ">=16",
+    "react": ">=19"
+  }
+}

@@ -1,0 +1,91 @@
+/* @akka/auth — login page, account chip.
+   Reads the Akka tokens every internal app defines on :root (--surface, --line,
+   --green, --green2, --green-deep, --bg, --red, --gutter, --ease). */
+
+.akka-auth-page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px var(--gutter);
+}
+.akka-auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.akka-auth-card h1 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  margin-top: 16px;
+}
+.akka-auth-sub {
+  font-size: 13px;
+  color: rgba(240, 240, 240, 0.72);
+  margin-bottom: 16px;
+}
+.akka-auth-note {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(240, 240, 240, 0.6);
+}
+.akka-auth-error {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--red);
+  margin-top: 8px;
+}
+
+.akka-auth-btn {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--green);
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.2s var(--ease);
+}
+.akka-auth-btn:hover:not(:disabled) { background: var(--green2); }
+.akka-auth-btn:active:not(:disabled) { background: var(--green-deep); }
+.akka-auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.akka-auth-btn:focus-visible { box-shadow: 0 0 0 4px rgba(105, 234, 155, 0.18); }
+
+.akka-auth-account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(240, 240, 240, 0.6);
+}
+.akka-auth-account form { display: inline-flex; }
+.akka-auth-signout {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: rgba(240, 240, 240, 0.72);
+  font-size: 11.5px;
+  padding: 4px 12px;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.akka-auth-signout:hover { border-color: var(--green); color: var(--grey); }
