@@ -25,7 +25,7 @@ so a configuration oversight cannot expose the tool.
 
 Sign-in uses the Google provider of the Supabase project `nlkxabxubykllskwzknx` (the one
 the ops dashboards sign in through). Its redirect allow list (Authentication → URL
-Configuration) must contain `https://utm-builder.marketing.akkatools.com/auth/callback`.
+Configuration) contains `https://utm-builder.marketing.akkatools.com/**` (added 2026-10-06); keep it there.
 
 ## Files
 
