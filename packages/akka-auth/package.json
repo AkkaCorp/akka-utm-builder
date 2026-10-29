@@ -1,8 +1,8 @@
 {
   "name": "@akka/auth",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "private": true,
-  "description": "Google sign-in restricted to @akka.app, through Supabase Auth, for Akka's internal Next.js apps.",
+  "description": "Sign-in for Akka's internal Next.js apps, through Supabase Auth: Google for @akka.app, email + password + TOTP for invited partners, roles from the access matrix.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -10,12 +10,31 @@
     "./middleware": "./src/middleware.ts",
     "./routes": "./src/routes.ts",
     "./login-screen": "./src/login-screen.tsx",
+    "./mfa-screen": "./src/mfa-screen.tsx",
+    "./ui": "./src/ui.ts",
     "./auth.css": "./src/auth.css"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "hash": "node scripts/hash.mjs"
   },
   "peerDependencies": {
     "@supabase/ssr": ">=0.12",
     "@supabase/supabase-js": ">=2.100",
     "next": ">=16",
     "react": ">=19"
+  },
+  "devDependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "next": "^16.4.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
   }
 }

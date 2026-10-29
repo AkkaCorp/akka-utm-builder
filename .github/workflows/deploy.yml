@@ -1,0 +1,98 @@
+name: Deploy
+
+# Deploys go through Akka Platform (AkkaCorp/akka-platform): this repo holds no Vercel
+# credential. The last job proves which repo and commit it is with a GitHub OIDC token;
+# the platform runs Akka's deploy checks, builds that exact commit, ships it, and reports
+# back here: a check on the commit, the "Deployments" panel, and on pull requests a comment
+# with the preview URL.
+#
+#   push to main        → production
+#   pull request        → preview
+#   Actions → Run       → production, from main
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.event_name == 'pull_request' && github.head_ref || 'production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  AKKA_PLATFORM_URL: https://platform.tech.akkatools.com
+
+jobs:
+  verify:
+    name: Typecheck, lint and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      # A plain build, with no credentials, so a broken change is caught here. It runs
+      # first: Next generates the route types (LayoutProps, PageProps) tsc needs.
+      - run: npm run build
+      - run: npx tsc --noEmit
+      - run: npx eslint .
+
+  migrate:
+    name: Migrate database
+    # Production only: previews share the production database and never change it.
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - id: has
+        run: |
+          if ls db/migrations/*.sql >/dev/null 2>&1; then echo "migrations=true" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-node@v5
+        if: steps.has.outputs.migrations == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+      - if: steps.has.outputs.migrations == 'true'
+        run: npm ci
+      # Runs as the app's own role, which can only touch the app's own schema.
+      - if: steps.has.outputs.migrations == 'true'
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+        run: |
+          if [ -z "$DATABASE_MIGRATION_URL" ]; then
+            echo "::error::No database yet: open a \"[provision] ${GITHUB_REPOSITORY#*/}\" issue in AkkaCorp/akka-platform with Database: Yes."
+            exit 1
+          fi
+          node db/migrate.mjs
+
+  deploy:
+    name: Deploy through Akka Platform
+    needs: [verify, migrate]
+    if: ${{ !cancelled() && needs.verify.result == 'success' && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # the OIDC token is this repo's only credential
+    steps:
+      - name: Ask Akka Platform to deploy this commit
+        run: |
+          oidc=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=akka-platform" | jq -r .value)
+          code=$(curl -sS -o response.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $oidc" "$AKKA_PLATFORM_URL/api/deploy")
+          if [ "$code" != 202 ]; then
+            echo "::error::Akka Platform refused the deploy (HTTP $code): $(jq -r '.error // .' response.json)"
+            exit 1
+          fi
+          {
+            echo "Deploy started on Akka Platform ($(jq -r .environment response.json))."
+            echo "The result appears as the **akka-platform** check on this commit."
+            echo "Live logs: $(jq -r .follow response.json)"
+          } >> "$GITHUB_STEP_SUMMARY"

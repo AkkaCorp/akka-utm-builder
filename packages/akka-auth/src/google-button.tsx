@@ -8,11 +8,14 @@ export function GoogleSignInButton({
   supabaseKey,
   domain,
   next,
+  className,
 }: {
   supabaseUrl: string;
   supabaseKey: string;
   domain: string;
   next: string;
+  /** The app's button classes (shadcn `buttonVariants()`); default: auth.css. */
+  className?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,11 +44,21 @@ export function GoogleSignInButton({
 
   return (
     <>
-      <button type="button" className="akka-auth-btn" onClick={signIn} disabled={busy}>
+      <button
+        type="button"
+        className={className ?? "akka-auth-btn"}
+        style={className ? { width: "100%" } : undefined}
+        onClick={signIn}
+        disabled={busy}
+      >
         <GoogleMark />
         {busy ? "Redirecting…" : "Login with your Akka Account"}
       </button>
-      {error && <p className="akka-auth-error">{error}</p>}
+      {error && (
+        <p className={className ? undefined : "akka-auth-error"} style={className ? { color: "var(--destructive)", fontSize: 14 } : undefined} role="alert">
+          {error}
+        </p>
+      )}
     </>
   );
 }
