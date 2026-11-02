@@ -1,26 +1,57 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { MFA_PATH, appKey, authMode, authStack, isAllowedEmail, legacyAdapter, supabaseConfig } from "./config";
-import { decide, type AuthUser, type Decision } from "./decision";
-import { readClaims } from "./unified";
+import {
+  MFA_PATH,
+  appKey,
+  authMode,
+  authStack,
+  cookieDomain,
+  isAllowedEmail,
+  isZcmph,
+  legacyAdapter,
+  supabaseConfig,
+} from "./config";
+import { decide, endsSession, type AuthUser, type Decision } from "./decision";
+import { sessionCookies } from "./shared-session";
+import { endSession, readClaims } from "./unified";
 import { HUB, getAccess, hubLogin, rememberPass, rememberedPass, sessionKey } from "./zcmph";
 
 export type { AuthUser } from "./decision";
 
+/** The public host of the current request (behind Vercel's proxy: x-forwarded-host). */
+async function requestHost() {
+  const headerStore = await headers();
+  return headerStore.get("x-forwarded-host")?.split(",")[0].trim() || headerStore.get("host");
+}
+
+/**
+ * The Supabase server client of a Server Component or a route handler, on
+ * next/headers' cookies. 0.5: on akkatools.com its cookies go on
+ * `.akkatools.com`, like the middleware's.
+ */
 export async function createServerSupabase() {
   const config = supabaseConfig();
   if (!config) throw new Error("Supabase is not configured");
   const cookieStore = await cookies();
+  const headerStore = await headers();
+  const host = await requestHost();
+  const jar = sessionCookies({
+    host,
+    cookieHeader: headerStore.get("cookie"),
+    supabaseUrl: config.url,
+    shared: !isZcmph(),
+  });
 
   return createServerClient(config.url, config.key, {
+    cookieOptions: jar.cookieOptions,
     cookies: {
       getAll() {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
         try {
-          for (const { name, value, options } of cookiesToSet) {
+          for (const { name, value, options } of jar.write(cookiesToSet)) {
             cookieStore.set(name, value, options);
           }
         } catch {
@@ -57,6 +88,10 @@ async function resolve(): Promise<Resolution> {
     if (!key) return { kind: "misconfigured" };
     const supabase = await createServerSupabase();
     const decision: Decision = decide(await readClaims(supabase), key);
+    // 0.5: an identity refusal ends the session (a Server Component cannot
+    // clear the cookies, but the session is revoked); no access to this tool
+    // leaves it alone, the user stays signed in to the other tools.
+    if (decision.kind === "deny" && endsSession(decision.reason)) await endSession(supabase);
     return decision;
   }
 
@@ -69,7 +104,12 @@ async function resolve(): Promise<Resolution> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user || !isAllowedEmail(user.email)) return { kind: "login" };
+  if (!user) return { kind: "login" };
+  if (!isAllowedEmail(user.email)) {
+    // 0.5: on akkatools.com the session is shared (a partner of the unified
+    // tools): a 403 for this tool, the session kept. Elsewhere: as 0.1.0.
+    return cookieDomain(await requestHost()) ? { kind: "deny", reason: "domain", status: 403 } : { kind: "login" };
+  }
   return { kind: "allow", user: { email: user.email ?? null, kind: "internal", groups: [], roles: ["user"] } };
 }
 
@@ -100,7 +140,13 @@ async function resolveZcmph(): Promise<Resolution> {
   return { kind: "allow", user: asUser(access.email, access.is_admin) };
 }
 
-/** Where a page goes when the resolution is not a pass. Never returns. */
+/**
+ * Where a page goes when the resolution is not a pass. Never returns. A
+ * refusal lands on this app's `/login?error=…`, the 403 screen (0.5: with
+ * "Use another account" and the session kept for `no_app`); no session goes
+ * to `/login`, which the middleware forwards to the central sign-in page on
+ * akkatools.com.
+ */
 function leave(r: Exclude<Resolution, { kind: "allow" } | { kind: "open" }>): never {
   const zcmph = authStack() === "legacy" && legacyAdapter() === "akkatools-zcmph";
   if (zcmph) redirect(r.kind === "deny" ? HUB : hubLogin(HUB));

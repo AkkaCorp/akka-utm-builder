@@ -6,7 +6,7 @@ import {
   authMode,
   authStack,
   isPreviewDeployment,
-  safeNext,
+  safeNextUrl,
   supabaseConfig,
 } from "./config";
 import { DENY_MESSAGES } from "./decision";
@@ -72,7 +72,7 @@ const ERRORS: Record<string, Message> = {
     lead: "Sign in the way your account allows.",
     detail: "Akka accounts sign in with Google; partners with their email and password.",
   },
-  no_app: { lead: DENY_MESSAGES.no_app, detail: "Ask the tool's owner to add you, then sign in again." },
+  no_app: { lead: DENY_MESSAGES.no_app, detail: "Ask the tool's owner to add you. You stay signed in to your other tools." },
   role: {
     lead: "Your account does not have the role this page needs.",
     detail: "Ask the tool's owner for it, or go back to the home page.",
@@ -83,6 +83,14 @@ const ERRORS: Record<string, Message> = {
   },
   credentials: { lead: "Wrong email or password.", detail: "Check both and try again." },
 };
+
+/**
+ * Refusals of a signed-in user on this tool only (0.5): the session is kept,
+ * so the screen offers to switch account instead of a sign-in button.
+ */
+const SIGNED_IN_REFUSALS = new Set(["no_app", "not_configured", "role"]);
+
+const SWITCH_NOTE = "Signing out ends your session on every internal tool.";
 
 function errorMessage(params: LoginSearchParams): Message | null {
   if (!params.error) return null;
@@ -108,6 +116,13 @@ function errorMessage(params: LoginSearchParams): Message | null {
  * Unified stack: a « Partner? Sign in with email » footer leads to an
  * email + password form (`?partner=1`) for invited partners. Legacy: Google
  * only, as in 0.1.0.
+ *
+ * 0.5: it is also the 403 screen. For a refusal on this tool only (`no_app`,
+ * `not_configured`, `role`) the session is kept, and the card shows the reason
+ * with « Use another account » (a sign-out) instead of the sign-in buttons.
+ * Legacy `domain` keeps the sign-in buttons (off akkatools.com the session is
+ * already ended) and adds « Use another account » (on akkatools.com it is kept).
+ * `next` may be another tool's URL on akkatools.com (central sign-in page).
  */
 export function LoginScreen({
   productName,
@@ -123,9 +138,11 @@ export function LoginScreen({
   const mode = authMode();
   const config = supabaseConfig();
   const error = errorMessage(params);
-  const next = safeNext(params.next);
+  const next = safeNextUrl(params.next);
   const unified = authStack() === "unified";
-  const partner = unified && params.partner === "1" && mode === "required";
+  const refused = mode === "required" && !!params.error && SIGNED_IN_REFUSALS.has(params.error);
+  const partner = unified && params.partner === "1" && mode === "required" && !refused;
+  const switchToo = mode === "required" && params.error === "domain";
 
   if (ui) {
     return (
@@ -139,6 +156,8 @@ export function LoginScreen({
         error={error}
         unified={unified}
         partner={partner}
+        refused={refused}
+        switchToo={switchToo}
       />
     );
   }
@@ -152,7 +171,12 @@ export function LoginScreen({
         productName={productName}
       />
       {error && <ErrorBox message={error} />}
-      {partner ? (
+      {refused ? (
+        <>
+          <SwitchAccount />
+          <p className="akka-auth-hint">{SWITCH_NOTE}</p>
+        </>
+      ) : partner ? (
         <PartnerForm next={next} />
       ) : mode === "required" && config ? (
         <>
@@ -165,6 +189,13 @@ export function LoginScreen({
                 Sign in with email
               </a>
             </p>
+          )}
+          {switchToo && (
+            <form action="/auth/signout" method="post" className="akka-auth-foot">
+              <button type="submit" className="akka-auth-textbtn">
+                Use another account
+              </button>
+            </form>
           )}
         </>
       ) : (
@@ -276,6 +307,8 @@ function DesignSystemLogin({
   error,
   unified = false,
   partner = false,
+  refused = false,
+  switchToo = false,
 }: {
   ui: AuthUi;
   productName: string;
@@ -286,6 +319,8 @@ function DesignSystemLogin({
   error: Message | null;
   unified?: boolean;
   partner?: boolean;
+  refused?: boolean;
+  switchToo?: boolean;
 }) {
   const { Card, CardHeader, CardTitle, CardDescription, CardContent, Alert, AlertDescription } = ui;
   const sub = partner ? `${productName} · for invited partners` : (description ?? `For @${ALLOWED_DOMAIN} accounts`);
@@ -307,7 +342,12 @@ function DesignSystemLogin({
               </AlertDescription>
             </Alert>
           )}
-          {partner ? (
+          {refused ? (
+            <>
+              <SwitchAccount buttonClassName={ui.buttonClassName} />
+              <p style={{ fontSize: 13, opacity: 0.8 }}>{SWITCH_NOTE}</p>
+            </>
+          ) : partner ? (
             <PartnerForm next={next} ui={ui} />
           ) : mode === "required" && config ? (
             <>
@@ -326,6 +366,13 @@ function DesignSystemLogin({
                   </a>
                 </p>
               )}
+              {switchToo && (
+                <form action="/auth/signout" method="post">
+                  <button type="submit" className="akka-auth-signout">
+                    Use another account
+                  </button>
+                </form>
+              )}
             </>
           ) : (
             <Alert variant={mode === "open" ? undefined : "destructive"}>
@@ -339,6 +386,21 @@ function DesignSystemLogin({
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+/** « Use another account »: signs out (everywhere), then back to a sign-in page. */
+function SwitchAccount({ buttonClassName }: { buttonClassName?: string }) {
+  return (
+    <form action="/auth/signout" method="post" style={{ width: "100%" }}>
+      <button
+        type="submit"
+        className={buttonClassName ?? "akka-auth-btn"}
+        style={buttonClassName ? { width: "100%" } : undefined}
+      >
+        Use another account
+      </button>
+    </form>
   );
 }
 

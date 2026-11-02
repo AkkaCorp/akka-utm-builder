@@ -2,6 +2,7 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { browserCookieOptions } from "./shared-session";
 
 type Step =
   | { kind: "loading" }
@@ -13,7 +14,8 @@ type Step =
  * TOTP second factor for partner accounts, in the browser (supabase.auth.mfa.*):
  * first sign-in enrols an authenticator app (QR code + first code), every later
  * one answers a challenge. Verifying upgrades the session to aal2 and rewrites
- * the session cookies; the middleware then lets the user through.
+ * the session cookies (0.5: on .akkatools.com on akkatools.com); the
+ * middleware then lets the user through.
  */
 export function MfaForm({
   supabaseUrl,
@@ -24,6 +26,7 @@ export function MfaForm({
 }: {
   supabaseUrl: string;
   supabaseKey: string;
+  /** A path, or another tool's URL, already through safeNextUrl. */
   next: string;
   /** The app's classes (shadcn); default: auth.css. */
   buttonClassName?: string;
@@ -41,7 +44,9 @@ export function MfaForm({
     started.current = true;
     (async () => {
       try {
-        const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+        const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
+          cookieOptions: browserCookieOptions(window.location.hostname),
+        });
         const { data, error } = await supabase.auth.mfa.listFactors();
         if (error) throw error;
         const verified = data.totp[0];
@@ -75,7 +80,9 @@ export function MfaForm({
     setBusy(true);
     setError(null);
     try {
-      const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+      const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
+        cookieOptions: browserCookieOptions(window.location.hostname),
+      });
       const { error } = await supabase.auth.mfa.challengeAndVerify({
         factorId: step.factorId,
         code: code.replace(/\s/g, ""),

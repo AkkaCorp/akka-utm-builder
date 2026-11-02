@@ -37,6 +37,20 @@ export type DenyReason =
   | "provider" // wrong sign-in method for this kind of account (rules 4 and 5)
   | "no_app"; // no role on this app (rule 6)
 
+/**
+ * 0.5: which refusals end the session. The session cookie is shared by every
+ * tool on akkatools.com, so signing out on a refusal signs the user out of
+ * all of them.
+ *
+ * - Identity (`suspended`, `provider`): the session itself must not count
+ *   anywhere, so it is ended.
+ * - Authorization (`no_app`, `not_configured`): about this tool only. A 403,
+ *   the session stays, the other tools keep working.
+ */
+export function endsSession(reason: DenyReason) {
+  return reason === "suspended" || reason === "provider";
+}
+
 export type Decision =
   | { kind: "allow"; user: AuthUser }
   | { kind: "login" }

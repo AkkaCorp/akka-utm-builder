@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { appKey, supabaseConfig } from "./config";
+import { appKey, cookieDomain, supabaseConfig } from "./config";
 
 /**
  * Legacy adapter `akkatools-zcmph`: the akkatools.com SSO gate, ported from
@@ -17,11 +17,8 @@ export const HUB = "https://akkatools.com";
 
 export type HubAccess = { email: string; tools: string[]; is_admin: boolean };
 
-export function cookieDomain(host: string | null | undefined): string | undefined {
-  if (!host) return undefined;
-  const h = host.split(":")[0].toLowerCase();
-  return h === "akkatools.com" || h.endsWith(".akkatools.com") ? ".akkatools.com" : undefined;
-}
+/** Moved to config.ts in 0.5 (every stack now shares the session on akkatools.com); kept here for importers. */
+export { cookieDomain };
 
 export function hubLogin(next: string) {
   return `${HUB}/login?next=${encodeURIComponent(next)}`;

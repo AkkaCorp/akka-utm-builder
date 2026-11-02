@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { authMode, authStack, safeNext, supabaseConfig } from "./config";
+import { authMode, authStack, safeNextUrl, supabaseConfig } from "./config";
 import { AuthCardHeader, AuthPage, type ToolIdentity } from "./login-screen";
 import { MfaForm } from "./mfa-form";
 import type { AuthUi } from "./ui";
@@ -25,7 +25,7 @@ export function MfaScreen({
 } & ToolIdentity) {
   const config = supabaseConfig();
   if (authStack() !== "unified" || authMode() !== "required" || !config) notFound();
-  const next = safeNext(params.next);
+  const next = safeNextUrl(params.next);
 
   const form = (
     <MfaForm
