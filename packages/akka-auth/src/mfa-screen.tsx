@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { authMode, authStack, safeNext, supabaseConfig } from "./config";
+import { AuthCardHeader, AuthPage, type ToolIdentity } from "./login-screen";
 import { MfaForm } from "./mfa-form";
 import type { AuthUi } from "./ui";
 
@@ -9,16 +10,19 @@ import type { AuthUi } from "./ui";
  * first sign-in, the challenge on every later one. The app's
  * `app/auth/mfa/page.tsx` renders it; the middleware only lets a session that
  * is waiting for its second factor reach it. Legacy stacks: 404.
+ * Same page and card as the login screen, with the tool's `icon` (0.4); the
+ * line under the name is the second-factor notice, not `description`.
  */
 export function MfaScreen({
   productName,
   params,
   ui,
+  icon,
 }: {
   productName: string;
   params: { next?: string };
   ui?: AuthUi;
-}) {
+} & ToolIdentity) {
   const config = supabaseConfig();
   if (authStack() !== "unified" || authMode() !== "required" || !config) notFound();
   const next = safeNext(params.next);
@@ -34,7 +38,7 @@ export function MfaScreen({
   );
   const signOut = (
     <form action="/auth/signout" method="post">
-      <button type="submit" className="akka-auth-signout">
+      <button type="submit" className={ui ? "akka-auth-signout" : "akka-auth-textbtn"}>
         Use another account
       </button>
     </form>
@@ -60,14 +64,15 @@ export function MfaScreen({
   }
 
   return (
-    <main className="akka-auth-page">
-      <div className="akka-auth-card">
-        <Image src="/akka-logo.png" alt="Akka" width={98} height={32} priority style={{ height: 32, width: "auto" }} />
-        <h1>{productName}</h1>
-        <p className="akka-auth-sub">Second factor required for partner accounts.</p>
-        {form}
-        {signOut}
-      </div>
-    </main>
+    <AuthPage>
+      <AuthCardHeader
+        title={productName}
+        description="Second factor required for partner accounts."
+        icon={icon}
+        productName={productName}
+      />
+      <div className="akka-auth-stack">{form}</div>
+      <div className="akka-auth-foot">{signOut}</div>
+    </AuthPage>
   );
 }

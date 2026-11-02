@@ -5,5 +5,5 @@ import { MfaScreen } from "@akka/auth/mfa-screen";
 export const dynamic = "force-dynamic";
 
 export default async function MfaPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  return <MfaScreen productName="UTM Link Builder" params={await searchParams} />;
+  return <MfaScreen productName="UTM Link Builder" icon={{ initials: "UTM" }} params={await searchParams} />;
 }
