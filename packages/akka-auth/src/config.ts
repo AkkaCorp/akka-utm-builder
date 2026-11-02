@@ -69,6 +69,17 @@ export function authMode(): AuthMode {
   return process.env.NODE_ENV === "production" ? "misconfigured" : "open";
 }
 
+/**
+ * A Vercel preview deployment (a branch or PR URL), not the production one.
+ * Vercel sets VERCEL_ENV on every deployment ("production", "preview",
+ * "development") and the platform never overrides it, so this needs no
+ * per-app setting and does not depend on the domain the page is served from.
+ * Local `next dev` and any non-Vercel host: false.
+ */
+export function isPreviewDeployment() {
+  return process.env.VERCEL_ENV?.trim().toLowerCase() === "preview";
+}
+
 export function isAllowedEmail(email: string | undefined | null) {
   if (!email) return false;
   const at = email.lastIndexOf("@");

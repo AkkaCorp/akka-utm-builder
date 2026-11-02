@@ -2,40 +2,138 @@
    Reads the Akka tokens every internal app defines on :root (--surface, --line,
    --green, --green2, --green-deep, --bg, --red, --gutter, --ease). */
 
+/* 0.4.1: the screen's own text tiers, amber, strong line and deep ground live under an
+   --akka-auth-* prefix. 0.4.0 read --muted / --faint from the app, but shadcn apps define
+   --muted as a background colour: the partner link came out dark on dark (portfolio). */
+:root {
+  --akka-auth-text-2: #A9C0B9;
+  --akka-auth-text-3: #8FA9A1;
+  --akka-auth-amber: #F2C46D;
+  --akka-auth-line2: rgba(159, 179, 172, 0.26);
+  --akka-auth-bg-deep: #0A2825;
+}
+
 .akka-auth-page {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
   min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px var(--gutter);
+  padding: 64px var(--gutter, 16px) 32px;
+  /* Two soft green halos, static (no animation). */
+  background:
+    radial-gradient(60% 55% at 18% 12%, rgba(105, 234, 155, 0.16), transparent 70%),
+    radial-gradient(50% 50% at 88% 92%, rgba(70, 199, 126, 0.12), transparent 70%),
+    var(--bg);
+  color: var(--grey, #F0F0F0);
 }
 .akka-auth-card {
+  box-sizing: border-box;
   width: 100%;
-  max-width: 380px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  max-width: 340px;
+  background: rgba(15, 56, 51, 0.72);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(159, 179, 172, 0.22);
   border-radius: 16px;
-  padding: 32px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+}
+.akka-auth-card p { margin: 0; }
+
+.akka-auth-badge {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  white-space: nowrap;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--akka-auth-amber);
+  border: 1px solid rgba(242, 196, 109, 0.4);
+  background: rgba(242, 196, 109, 0.08);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.akka-auth-brand {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  font-size: 12px;
+  color: var(--akka-auth-text-3);
 }
-.akka-auth-card h1 {
-  font-size: 20px;
+.akka-auth-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.akka-auth-title h1 {
+  margin: 0;
+  font-size: 22px;
   font-weight: 600;
-  letter-spacing: -0.014em;
-  margin-top: 16px;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
 }
-.akka-auth-sub {
-  font-size: 13px;
-  color: rgba(240, 240, 240, 0.72);
-  margin-bottom: 16px;
+.akka-auth-card .akka-auth-desc {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--akka-auth-text-2);
+  margin-top: 2px;
+}
+.akka-auth-appicon {
+  box-sizing: border-box;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.akka-auth-alert {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--grey, #F0F0F0);
+  background: rgba(240, 140, 140, 0.08);
+  border: 1px solid rgba(240, 140, 140, 0.35);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.akka-auth-alert svg { flex: none; margin-top: 2px; color: var(--red, #F08C8C); }
+.akka-auth-alert b { color: var(--red, #F08C8C); font-weight: 600; }
+
+.akka-auth-card > .akka-auth-btn { margin-top: 24px; }
+.akka-auth-card > .akka-auth-alert + .akka-auth-btn { margin-top: 16px; }
+.akka-auth-card .akka-auth-hint {
+  font-size: 12px;
+  color: var(--akka-auth-text-3);
+  margin-top: 8px;
+  text-align: center;
+}
+.akka-auth-card .akka-auth-foot {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--akka-auth-text-3);
 }
 .akka-auth-note {
   font-size: 12.5px;
   line-height: 1.5;
-  color: rgba(240, 240, 240, 0.6);
+  color: var(--akka-auth-text-2);
 }
 .akka-auth-error {
   font-size: 12.5px;
@@ -43,6 +141,8 @@
   color: var(--red);
   margin-top: 8px;
 }
+.akka-auth-card > .akka-auth-note,
+.akka-auth-card > .akka-auth-error { margin-top: 24px; }
 
 .akka-auth-btn {
   appearance: none;
@@ -66,7 +166,7 @@
 .akka-auth-btn:hover:not(:disabled) { background: var(--green2); }
 .akka-auth-btn:active:not(:disabled) { background: var(--green-deep); }
 .akka-auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.akka-auth-btn:focus-visible { box-shadow: 0 0 0 4px rgba(105, 234, 155, 0.18); }
+.akka-auth-btn:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(105, 234, 155, 0.18); }
 
 .akka-auth-account {
   display: flex;
@@ -90,28 +190,86 @@
 }
 .akka-auth-signout:hover { border-color: var(--green); color: var(--grey); }
 
-/* 0.2, unified stack: partner sign-in and second factor. */
+/* 0.2, unified stack: partner sign-in and second factor (restyled in 0.4). */
+.akka-auth-form { display: flex; flex-direction: column; width: 100%; }
+.akka-auth-field {
+  display: block;
+  margin-top: 14px;
+}
+.akka-auth-field > span {
+  display: block;
+  font-size: 12.5px;
+  color: var(--akka-auth-text-2);
+  margin-bottom: 6px;
+}
 .akka-auth-input {
+  box-sizing: border-box;
   width: 100%;
-  height: 40px;
+  height: 42px;
   padding: 0 12px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--akka-auth-line2);
   border-radius: 10px;
-  background: var(--bg);
+  background: var(--akka-auth-bg-deep);
   color: inherit;
   font-family: inherit;
   font-size: 14px;
-  transition: border-color 0.2s var(--ease);
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
-.akka-auth-input:focus-visible { outline: none; border-color: var(--green); }
-.akka-auth-link {
+.akka-auth-input:focus-visible {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 4px rgba(105, 234, 155, 0.14);
+}
+.akka-auth-btn-submit { margin-top: 18px; }
+.akka-auth-card .akka-auth-mfa {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--akka-auth-text-2);
+  background: var(--surface2, #12403A);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.akka-auth-mfa svg { flex: none; margin-top: 2px; }
+.akka-auth-back {
+  align-self: flex-start;
+  margin-top: 18px;
   font-size: 12.5px;
-  color: rgba(240, 240, 240, 0.72);
+  color: var(--akka-auth-text-2);
+  text-decoration: none;
+}
+.akka-auth-back:hover { color: var(--green); }
+.akka-auth-link {
+  color: var(--akka-auth-text-2);
   text-decoration: underline;
   text-underline-offset: 3px;
-  margin-top: 4px;
 }
 .akka-auth-link:hover { color: var(--green); }
+.akka-auth-link:focus-visible,
+.akka-auth-back:focus-visible,
+.akka-auth-textbtn:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.akka-auth-stack { margin-top: 20px; }
+.akka-auth-foot form { display: inline; }
+.akka-auth-textbtn {
+  appearance: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--akka-auth-text-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.akka-auth-textbtn:hover { color: var(--green); }
 .akka-auth-qr {
   background: #fff;
   border-radius: 10px;
@@ -123,5 +281,5 @@
   font-family: ui-monospace, monospace;
   font-size: 12px;
   word-break: break-all;
-  color: rgba(240, 240, 240, 0.72);
+  color: var(--akka-auth-text-2);
 }

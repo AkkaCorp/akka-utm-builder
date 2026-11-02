@@ -8,7 +8,7 @@ Live at https://utm-builder.marketing.akkatools.com. Vercel project
 `akka-utm-builder` in the Akka team (`akkacorp`), deployed by
 [Akka Platform](https://github.com/AkkaCorp/akka-platform).
 
-Stack: Next.js 16 (App Router) + the shared `@akka/auth` library (0.2.1) + the Akka design
+Stack: Next.js 16 (App Router) + the shared `@akka/auth` library (0.4.1) + the Akka design
 system (akka-brand tokens, Poppins, logo and favicon set).
 
 ## Access

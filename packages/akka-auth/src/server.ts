@@ -162,3 +162,5 @@ export async function rejectUnauthenticated({ role }: { role?: string } = {}): P
   }
   return null;
 }
+
+export { APP_ROLES_SQL, createAppAccessCheck, type AppAccess, type AppAccessQuery } from "./access-check";
