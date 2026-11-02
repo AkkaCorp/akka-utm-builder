@@ -1,6 +1,6 @@
 {
   "name": "@akka/auth",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "description": "Sign-in for Akka's internal Next.js apps, through Supabase Auth: Google for @akka.app, email + password + TOTP for invited partners, roles from the access matrix.",
   "type": "module",

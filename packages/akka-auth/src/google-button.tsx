@@ -2,6 +2,7 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import { useState } from "react";
+import { browserCookieOptions } from "./shared-session";
 
 export function GoogleSignInButton({
   supabaseUrl,
@@ -13,6 +14,7 @@ export function GoogleSignInButton({
   supabaseUrl: string;
   supabaseKey: string;
   domain: string;
+  /** A path, or (0.5, central sign-in page) another tool's URL, already through safeNextUrl. */
   next: string;
   /** The app's button classes (shadcn `buttonVariants()`); default: auth.css. */
   className?: string;
@@ -24,7 +26,11 @@ export function GoogleSignInButton({
     setBusy(true);
     setError(null);
     try {
-      const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+      // 0.5: on akkatools.com the PKCE verifier goes on .akkatools.com, like the
+      // session, so the callback of the central sign-in page reads it.
+      const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
+        cookieOptions: browserCookieOptions(window.location.hostname),
+      });
       const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
